@@ -6,4 +6,5 @@ Pillow
 
 # Testing
 pytest
+pytest-cov
 mock
