@@ -5,6 +5,7 @@ from trainer.sample_functions import add, divide, main, multiply, subtract
 def test_add():
     """Test add."""
     assert add(1, 2) == 3
+    assert add(5, -1) == 4
 
 
 def test_subtract():
