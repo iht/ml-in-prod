@@ -1,0 +1,9 @@
+tensorflow
+versioneer
+
+# For applications handling images in Cloud ML Engine
+Pillow
+
+# Testing
+pytest
+mock
