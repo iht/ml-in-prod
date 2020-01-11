@@ -1,86 +1,65 @@
-"""A simple main file to showcase the template."""
+"""Main module for training."""
 
+from .model import build_model
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras import losses, metrics, optimizers
+from tensorflow.keras.utils import to_categorical
+
+import argparse
 import logging.config
 
-"""
-This module is an example for a single Python application with some
-top level functions. The tests directory includes some unitary tests
-for these functions.
 
-This is one of two main files samples included in this
-template. Please feel free to remove this, or the other
-(sklearn_main.py), or adapt as you need.
-"""
+LOGGER = logging.getLogger()
 
 
-def add(x, y):
-    """Add the given parameters.
-
-    :param x: x value
-    :type x: int
-    :param y: y value
-    :type y: int
-    :return: the sum of x and y
-    :rtype: int
-    """
-    return x + y
+def _transform_x(x):
+  return x / 255.0
 
 
-def subtract(x, y):
-    """Substract the given parameters.
-
-    :param x: x value
-    :type x: int
-    :param y: y value
-    :type y: int
-    :return: the diff of x and y
-    :rtype: int
-    """
-    return x - y
+def _transform_y(y):
+  return to_categorical(y)
 
 
-def multiply(x, y):
-    """Multiply the given parameters.
+def train_and_evaluate(epochs, batch_size):
+  """Train and evaluate the model."""
+  model = build_model()
 
-    :param x: x value
-    :type x: int
-    :param y: y value
-    :type y: int
-    :return: the multiplication of x and y
-    :rtype: int
-    """
-    return x * y
+  # Download data
+  train_data, test_data = mnist.load_data()
+  x_train, y_train = train_data
+  x_test, y_test = test_data
 
+  # Transform data
+  x_train_transf = _transform_x(x_train)
+  x_test_transf = _transform_x(x_test)
+  y_train_transf = _transform_y(y_train)
+  y_test_transf = _transform_y(y_test)
 
-def divide(x, y):
-    """Divide the given parameters.
+  # Fit the model
+  model.compile(optimizer=optimizers.Adam(),
+                loss=losses.categorical_crossentropy,
+                metrics=[metrics.categorical_accuracy])
+  model.fit(x_train_transf,
+            y_train_transf,
+            epochs=epochs,
+            batch_size=batch_size)
 
-    :param x: x value
-    :type x: int
-    :param y: y value
-    :type y: int
-    :return: the division of x by y
-    :rtype: int
-    """
-    return x / y
+  # Evaluate the model
+  myloss, myacc = model.evaluate(x_test_transf, y_test_transf)
+  LOGGER.info('Test loss value: %.4f' % myloss)
+  LOGGER.info('Test accuracy: %.4f' % myacc)
 
-
-def main():
-    """Entry point for your module."""
-    logger = logging.getLogger()
-    x1 = 2
-    y1 = 3
-    logger.info('Realizando suma')
-    logger.debug('{x} + {y} = '.format(x=x1, y=y1) + str(add(x1, y1)))
-    logger.info('Realizando resta')
-    logger.debug('{x} - {y} = '.format(x=x1, y=y1) + str(subtract(x1, y1)))
-    logger.info('Realizando multiplicación')
-    logger.debug('{x} * {y} = '.format(x=x1, y=y1) + str(multiply(x1, y1)))
-    logger.info('Realizando división')
-    logger.debug('{x} / {y} = '.format(x=x1, y=y1) + str(divide(x1, y1)))
-    logger.debug('TERMINADO')
-    logger.critical('FAIL')
+  # TODO: Serialize and store the model
 
 
-if __name__ == "__main__":
-    main()
+if '__main__' == __name__:
+  # Parse command line arguments
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--epochs', type=int, required=True)
+  parser.add_argument('--batch_size', type=int, required=True)
+
+  args = parser.parse_args()
+  epochs = args.epochs
+  batch_size = args.batch_size
+
+  train_and_evaluate(epochs, batch_size)
