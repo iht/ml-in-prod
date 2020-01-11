@@ -57,6 +57,7 @@ if '__main__' == __name__:
   parser = argparse.ArgumentParser()
   parser.add_argument('--epochs', type=int, required=True)
   parser.add_argument('--batch_size', type=int, required=True)
+  parser.add_argument('--job-dir', default=None, required=False)
 
   args = parser.parse_args()
   epochs = args.epochs
