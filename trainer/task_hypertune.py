@@ -1,8 +1,8 @@
-"""Manage the training job."""
+"""Manage the training job, with hyperparameters tuning enabled."""
 
 from .model import build_model
-from .utils import upload_local_directory_to_gcs
 from google.cloud import storage
+from tensorflow.core.framework.summary_pb2 import Summary
 from tensorflow.keras import losses
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
@@ -74,16 +74,28 @@ def train_and_evaluate(train_data,
         callbacks=[tb_callback])
   test_loss, test_acc = m.evaluate(x_test, y_test)
 
-  # Save model in TF SavedModel format
-  # (this is the default in TF2.0, but experimental in TF1)
-  localdir = 'my_mnist_model/'
-  tf.keras.experimental.export_saved_model(m, localdir)
+  localfn = 'mymodel.h5'
+  m.save(localfn)
 
   # Upload to GCS
+  fn = 'mnist_keras_' + time.strftime("%Y%m%d%H%M%S") + '.h5'
+  output_path_gcs = os.path.join(path_in_bucket, fn)
   client = storage.Client()
   bucket = client.bucket(bucket_name)
-  LOGGER.info("Uploading model to gs://%s/%s" % (bucket_name, path_in_bucket))
-  upload_local_directory_to_gcs(localdir, bucket, path_in_bucket)
+  blob = bucket.blob(output_path_gcs)
+  LOGGER.info("Uploading model to %s" % output_path_gcs)
+  blob.upload_from_filename(localfn)
+
+  # Report metrics to Cloud ML Engine for hypertuning
+  metric_tag = 'accuracyMnist'
+  summary = Summary(value=[Summary.Value(tag=metric_tag,
+                                         simple_value=test_acc)])
+  eval_path = os.path.join(job_dir, metric_tag)
+  LOGGER.info("Writing metrics to %s" % eval_path)
+  summary_writer = tf.summary.FileWriter(eval_path)
+
+  summary_writer.add_summary(summary)
+  summary_writer.flush()
 
 
 def _preprocess_x(x):
