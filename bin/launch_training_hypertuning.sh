@@ -9,7 +9,6 @@ gcloud ai-platform jobs submit training mnist_ht_`date +"%s"` \
   --module-name trainer.task \
   --region europe-west1 \
   --job-dir gs://ihr-ml-in-prod/tmp/ \
-  -- \
-  --epochs $EPOCHS \
-  --batch-size $BATCH_SIZE
+  --config ./bin/hyper.yaml
+
 

@@ -1,0 +1,19 @@
+trainingInput:
+  hyperparameters:
+    goal: MAXIMIZE
+    hyperparameterMetricTag: accKSchool
+    maxTrials: 30
+    maxParallelTrials: 5
+    enableTrialEarlyStopping: True
+    params:
+    - parameterName: epochs
+      type: INTEGER
+      minValue: 10
+      maxValue: 50
+      scaleType: UNIT_LINEAR_SCALE
+    - parameterName: batch-size
+      type: DISCRETE
+      discreteValues:
+        - 1024
+        - 2048
+        - 4096
