@@ -1,7 +1,7 @@
 EPOCHS=30
 BATCH_SIZE=2048
 
-gcloud ai-platform jobs submit training mnist_ht_`date +"%s"` \
+gcloud ai-platform jobs submit training mnist_`date +"%s"` \
   --python-version 3.7 \
   --runtime-version 1.15 \
   --scale-tier BASIC \
@@ -11,5 +11,7 @@ gcloud ai-platform jobs submit training mnist_ht_`date +"%s"` \
   --job-dir gs://ihr-ml-in-prod/tmp/ \
   -- \
   --epochs $EPOCHS \
-  --batch-size $BATCH_SIZE
+  --batch-size $BATCH_SIZE \
+  --output-bucket ihr-ml-in-prod \
+  --output-path models
 
