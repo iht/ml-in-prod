@@ -1,7 +1,7 @@
 trainingInput:
   hyperparameters:
     goal: MAXIMIZE
-    hyperparameterMetricTag: accKSchool
+    hyperparameterMetricTag: accuracy_test
     maxTrials: 30
     maxParallelTrials: 5
     enableTrialEarlyStopping: True

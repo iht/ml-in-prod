@@ -16,7 +16,7 @@ def build_model():
 
   m = models.Sequential()
 
-  m.add(layers.Input((28, 28,)))
+  m.add(layers.Input((28, 28,), name='my_input_layer'))
   m.add(layers.Flatten())
   m.add(layers.Dense(256, activation=activations.relu))
   m.add(layers.Dense(128, activation=activations.relu))

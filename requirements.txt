@@ -1,6 +1,5 @@
 tensorflow
 versioneer
-google-cloud-storage
 
 # For applications handling images in Cloud ML Engine
 Pillow

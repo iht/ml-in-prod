@@ -1,8 +1,7 @@
 """Manage the training job."""
 
+from . import __version__
 from .model import build_model
-from .utils import upload_local_directory_to_gcs
-from google.cloud import storage
 from tensorflow.keras import losses
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
@@ -14,6 +13,7 @@ import logging.config
 import os
 import tensorflow as tf
 import time
+
 
 LOGGER = logging.getLogger()
 
@@ -72,19 +72,12 @@ def train_and_evaluate(train_data,
         batch_size=batch_size,
         epochs=epochs,
         callbacks=[tb_callback])
+
   test_loss, test_acc = m.evaluate(x_test, y_test)
 
   # Save model in TF SavedModel format
-  # (this is the default in TF2.0, but experimental in TF1)
-  localdir = 'my_mnist_model/'
-  tf.keras.experimental.export_saved_model(m, localdir)
-
-  # Upload to GCS
-  client = storage.Client()
-  bucket = client.bucket(bucket_name)
-  LOGGER.info("Uploading model to gs://%s/%s" % (bucket_name, path_in_bucket))
-  upload_local_directory_to_gcs(localdir, bucket, path_in_bucket)
-
+  modeldir = f'gs://{bucket_name}/{path_in_bucket}/my_mnist_model_{__version__}/'
+  tf.keras.models.save_model(m, modeldir, save_format='tf')
 
 def _preprocess_x(x):
   return x / 255.0

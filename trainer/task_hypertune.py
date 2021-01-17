@@ -1,8 +1,6 @@
 """Manage the training job, with hyperparameters tuning enabled."""
 
 from .model import build_model
-from google.cloud import storage
-from tensorflow.core.framework.summary_pb2 import Summary
 from tensorflow.keras import losses
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
@@ -47,8 +45,6 @@ def prepare_data():
 
 def train_and_evaluate(train_data,
                        test_data,
-                       bucket_name,
-                       path_in_bucket,
                        job_dir,
                        batch_size,
                        epochs):
@@ -74,28 +70,14 @@ def train_and_evaluate(train_data,
         callbacks=[tb_callback])
   test_loss, test_acc = m.evaluate(x_test, y_test)
 
-  localfn = 'mymodel.h5'
-  m.save(localfn)
-
-  # Upload to GCS
-  fn = 'mnist_keras_' + time.strftime("%Y%m%d%H%M%S") + '.h5'
-  output_path_gcs = os.path.join(path_in_bucket, fn)
-  client = storage.Client()
-  bucket = client.bucket(bucket_name)
-  blob = bucket.blob(output_path_gcs)
-  LOGGER.info("Uploading model to %s" % output_path_gcs)
-  blob.upload_from_filename(localfn)
-
   # Report metrics to Cloud ML Engine for hypertuning
-  metric_tag = 'accuracyMnist'
-  summary = Summary(value=[Summary.Value(tag=metric_tag,
-                                         simple_value=test_acc)])
+  metric_tag = 'accuracy_test'
   eval_path = os.path.join(job_dir, metric_tag)
+  writer = tf.summary.create_file_writer(eval_path)
   LOGGER.info("Writing metrics to %s" % eval_path)
-  summary_writer = tf.summary.FileWriter(eval_path)
-
-  summary_writer.add_summary(summary)
-  summary_writer.flush()
+  with writer.as_default():
+    tf.summary.scalar(metric_tag, test_acc, step=epochs)
+  writer.flush()
 
 
 def _preprocess_x(x):
@@ -108,17 +90,6 @@ def _preprocess_y(y):
 
 if '__main__' == __name__:
   parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '--output-bucket',
-      required=True,
-      help='Output GCS bucket (withot the gs:// prefix)'
-      'to write the serialized trained model')
-  parser.add_argument(
-      '--output-path',
-      default='',
-      required=True,
-      help='Relative path in the bucket for '
-      'to write the serialized trained model')
   parser.add_argument(
       '--batch-size',
       type=int,
@@ -137,8 +108,6 @@ if '__main__' == __name__:
 
   args = parser.parse_args()
 
-  bucket_name = args.output_bucket
-  output_path = args.output_path
   batch_size = args.batch_size
   epochs = args.epochs
   job_dir = args.job_dir
@@ -146,8 +115,6 @@ if '__main__' == __name__:
   train_data, test_data = prepare_data()
   train_and_evaluate(train_data,
                      test_data,
-                     bucket_name,
-                     output_path,
                      job_dir,
                      batch_size,
                      epochs)
