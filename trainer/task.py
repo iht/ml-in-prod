@@ -52,9 +52,6 @@ def train_and_evaluate(epochs, batch_size, job_dir):
     LOGGER.info('Test accuracy: %.4f' % myacc)
     # TODO: Publish metric for hypertuning
     metric_tag = 'accKSchool'
-    summ_value = Summary.Value(tag=metric_tag,
-                               simple_value=myacc)
-    summary = Summary(value=[summ_value])
     eval_path = os.path.join(job_dir, metric_tag)
 
     LOGGER.info('Writing metric to %s' % eval_path)
