@@ -4,6 +4,7 @@ workerPoolSpecs:
   replicaCount: 1
   pythonPackageSpec:
     executorImageUri: europe-docker.pkg.dev/vertex-ai/training/tf-cpu.2-3:latest
-    packageUris: gs://something
+    packageUris: gs://ml-in-the-cloud-vertex/src/
     pythonModule: trainer.task
-    args: --epochs=30 --batch-size=2048
+    args: --epochs=30 --batch-size=2048 --job-dir gs://ml-in-the-cloud-vertex/job_dir/
+
