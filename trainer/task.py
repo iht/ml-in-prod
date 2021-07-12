@@ -51,7 +51,7 @@ def train_and_evaluate(epochs, batch_size, job_dir):
     LOGGER.info('Test loss value: %.4f' % myloss)
     LOGGER.info('Test accuracy: %.4f' % myacc)
     # TODO: Publish metric for hypertuning
-    metric_tag = 'accKSchool'
+    metric_tag = 'myAccuracy'
     eval_path = os.path.join(job_dir, metric_tag)
 
     LOGGER.info('Writing metric to %s' % eval_path)
@@ -71,7 +71,7 @@ if '__main__' == __name__:
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, required=True)
     parser.add_argument('--batch-size', type=int, required=True)
-    parser.add_argument('--job-dir', default=None, required=False)
+    parser.add_argument('--job-dir', default=None, required=True)
 
     args = parser.parse_args()
     epochs = args.epochs
