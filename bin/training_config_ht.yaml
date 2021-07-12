@@ -1,20 +1,20 @@
 studySpec:
   metrics:
-  # Correspond to the metrics we use the hypertune library to report.
-  - metricId: myAccuracy
-    goal: MAXIMIZE
+    - metricId: myAccuracy
+      goal: MAXIMIZE
   parameters:
-  # Correspond to the command line argument our Python code expects.
-  - parameterId: epochs
-    integerValueSpec:
-      minValue: 10
-      maxValue: 50
-  - parameterId: batch-size
-    discreteValueSpec:
-      values:
-        - 1024
-        - 2048
-        - 4096
+    - parameterId: epochs
+      integerValueSpec:
+        minValue: 10
+        maxValue: 50
+    - parameterId: batch-size
+      discreteValueSpec:
+        values:
+          - 1024
+          - 2048
+          - 4096
+maxTrialCount: 100
+parallelTrialCount: 4
 trialJobSpec:
   workerPoolSpecs:
     machineSpec:
