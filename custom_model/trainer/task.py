@@ -17,6 +17,7 @@ import argparse
 import logging
 import os
 import random
+import sys
 
 import tensorflow as tf
 from keras import Model, activations, models, losses, metrics
@@ -101,8 +102,12 @@ if __name__ == "__main__":
     parser.add_argument('--job-dir', default=None, required=True)
     parser.add_argument('--max-tokens', default=MAX_TOKENS, type=int)
     parser.add_argument('--hidden-dim', default=HIDDEN_DIM, type=int)
+    parser.add_argument('--log', default='INFO', required=False)
 
     args = parser.parse_args()
+
+    loglevel = getattr(logging, args.log.upper())
+    logging.basicConfig(stream=sys.stdout, level=loglevel)
 
     train_and_evaluate(data_location=args.data_location,
                        epochs=args.epochs,
