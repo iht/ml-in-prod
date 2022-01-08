@@ -28,8 +28,6 @@ setup(name='my_first_ml_model',
       license='All rights reserved',
       packages=find_packages(exclude=['tests']),
       install_requires=install_requires,
-      setup_requires=['pytest-runner'],
-      tests_require=['pytest'],
       include_package_data=True,
       zip_safe=False
       )
