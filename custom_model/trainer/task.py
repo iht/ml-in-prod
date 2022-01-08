@@ -52,11 +52,12 @@ def train_and_evaluate(data_location, batch_size, epochs, job_dir, max_tokens, h
     vectorizer: TextVectorization = TextVectorization(ngrams=2, max_tokens=MAX_TOKENS, output_mode="multi_hot")
     vectorizer.adapt(train_ds.map(lambda x, _: x))
     train_ds: tf.data.Dataset = train_ds.map(lambda x, y: (vectorizer(x), y), num_parallel_calls=4)
+    validation_ds: tf.data.Dataset = validation_ds.map(lambda x, y: (vectorizer(x), y), num_parallel_calls=4)
     test_ds: tf.data.Dataset = test_ds.map(lambda x, y: (vectorizer(x), y), num_parallel_calls=4)
 
     model = _build_model(max_tokens, hidden_dim)
 
-    logging.info(model.summary())
+    model.summary(print_fn=logging.info)
 
     model.fit(train_ds.cache(), epochs=epochs, validation_data=validation_ds)
 
