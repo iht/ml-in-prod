@@ -4,7 +4,7 @@ workerPoolSpecs:
   replicaCount: 1
   pythonPackageSpec:
     executorImageUri: europe-docker.pkg.dev/vertex-ai/training/tf-cpu.2-7:latest
-    packageUris: gs://ihr-vertex-pipelines/dist/my_first_ml_model-0.6.tar.gz
+    packageUris: gs://ihr-vertex-pipelines/dist/my_first_ml_model-0.7.tar.gz
     pythonModule: trainer.task
     args:
       - --data-location=/gcs/ihr-vertex-pipelines/data/aclImdb/
