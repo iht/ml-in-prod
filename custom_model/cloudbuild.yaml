@@ -2,9 +2,11 @@ steps:
   # Install dependencies
   - name: python
     entrypoint: pip
+    dir: 'custom_model'
     args: [ "install", "-r", "requirements.txt", "--user" ]
   - name: python
     entrypoint: python
+    dir: 'custom_model'
     args: [ "setup.py", "sdist" ]
 artifacts:
   objects:
