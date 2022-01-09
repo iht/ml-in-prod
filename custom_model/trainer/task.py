@@ -36,7 +36,7 @@ MAX_TOKENS = 20000
 HIDDEN_DIM = 16
 VALIDATION_SPLIT = 0.2
 
-NUM_PARALLEL_READS = 16  # for performance when reading from GCS
+NUM_PARALLEL_READS = 128  # for performance when reading from GCS
 NUM_PARALLEL_CALLS = 4  # for performance when transforming text data (assuming 4 vCPUs in worker)
 
 
@@ -61,7 +61,7 @@ def _read_data_with_keras_utils(data_location: str,
     test_ds: tf.data.Dataset = utils.text_dataset_from_directory(test_location,
                                                                  batch_size=batch_size)
 
-    return train_ds.cache(), validation_ds.cache(), test_ds.cache()
+    return train_ds, validation_ds, test_ds
 
 
 def _read_positive_and_negative(data_location: str, num_parallel_reads: int) -> Tuple[tf.data.Dataset, int]:
@@ -95,7 +95,7 @@ def _read_using_parallel_reads(data_location: str,
     logging.info(f"Reading training data from {train_location}")
     all_train_ds, cardinality = _read_positive_and_negative(train_location, num_parallel_reads=num_parallel_reads)
     num_training_samples: int = int(cardinality * validation_split)
-    all_train_ds = all_train_ds.shuffle(cardinality + 1).cache()  # essential for random validation selection!
+    all_train_ds = all_train_ds.shuffle(cardinality + 1)  # essential for random validation selection!
     train_ds = all_train_ds.take(num_training_samples)
     validation_ds = all_train_ds.skip(num_training_samples)
 
@@ -103,9 +103,9 @@ def _read_using_parallel_reads(data_location: str,
     logging.info(f"Reading test data from {test_location}")
     test_ds, _ = _read_positive_and_negative(test_location, num_parallel_reads=num_parallel_reads)
 
-    train_ds = train_ds.batch(batch_size=batch_size).cache()
-    validation_ds = validation_ds.batch(batch_size=batch_size).cache()
-    test_ds = test_ds.batch(batch_size=batch_size).cache()
+    train_ds = train_ds.cache().batch(batch_size=batch_size)
+    validation_ds = validation_ds.cache().batch(batch_size=batch_size)
+    test_ds = test_ds.cache().batch(batch_size=batch_size)
 
     return train_ds, validation_ds, test_ds
 
@@ -145,7 +145,7 @@ def train_and_evaluate(data_location: str,
 
     model.summary(print_fn=logging.info)
 
-    model.fit(train_ds, epochs=epochs, validation_data=validation_ds)
+    model.fit(train_ds.cache(), epochs=epochs, validation_data=validation_ds.cache())
 
     # Evaluate metrics and write to log
     loss, acc = model.evaluate(test_ds)
