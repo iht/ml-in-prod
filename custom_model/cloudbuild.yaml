@@ -11,4 +11,4 @@ steps:
 artifacts:
   objects:
     location: 'gs://ihr-vertex-pipelines/dist/'
-    paths: [ 'dist/*.tar.gz' ]
+    paths: [ 'custom_model/dist/*.tar.gz' ]
