@@ -1,0 +1,12 @@
+steps:
+  # Install dependencies
+  - name: python
+    entrypoint: pip
+    args: [ "install", "-r", "requirements.txt", "--user" ]
+  - name: python
+    entrypoint: python
+    args: [ "setup.py", "sdist" ]
+artifacts:
+  objects:
+    location: 'gs://ihr-vertex-pipelines/dist/'
+    paths: [ 'dist/*.tar.gz' ]
