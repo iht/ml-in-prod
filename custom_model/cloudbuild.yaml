@@ -1,13 +1,18 @@
 steps:
+  # Grab full history
+  - name: gcr.io/cloud-builders/git
+    args: [ 'fetch', '--unshallow' ]
   # Install dependencies
   - name: python
     entrypoint: pip
     dir: 'custom_model'
     args: [ "install", "-r", "requirements.txt", "--user" ]
+  # Build package
   - name: python
     entrypoint: python
     dir: 'custom_model'
     args: [ "setup.py", "sdist" ]
+# Upload built package
 artifacts:
   objects:
     location: 'gs://ihr-vertex-pipelines/dist/'
