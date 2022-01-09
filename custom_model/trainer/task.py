@@ -32,8 +32,8 @@ HIDDEN_DIM = 16
 
 
 def train_and_evaluate(data_location, batch_size, epochs, job_dir, max_tokens, hidden_dim):
-    train_location = os.path.join(data_location, "train")
-    test_location = os.path.join(data_location, "test")
+    train_location = os.path.join(data_location, "train/")
+    test_location = os.path.join(data_location, "test/")
 
     seed = random.randrange(1000)
 
