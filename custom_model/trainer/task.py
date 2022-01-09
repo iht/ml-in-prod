@@ -19,6 +19,7 @@ import os
 import random
 import sys
 
+import numpy as np
 import tensorflow as tf
 from keras import Model, activations, models, losses, metrics
 from keras import layers
@@ -26,6 +27,8 @@ from keras.layers import TextVectorization
 from keras.optimizer_v2.rmsprop import RMSProp
 from keras.type.types import Layer
 from tensorflow.keras import utils
+
+from . import __version__
 
 MAX_TOKENS = 20000
 HIDDEN_DIM = 16
@@ -81,6 +84,11 @@ def train_and_evaluate(data_location, batch_size, epochs, job_dir, max_tokens, h
     logging.info(f"Writing model to {model_path}")
     model.save(model_path)
 
+    # Write text vectorizer (to avoid training-inference skew)
+    vectorizer_path = os.path.join(job_dir, "text_vectorizer_weights.npy")
+    logging.info(f"Writing text vectorizer to {vectorizer_path}")
+    np.save(vectorizer_path, vectorizer.get_weights())
+
 
 def _build_model(max_tokens, hidden_dim) -> Model:
     inputs: Layer = layers.Input(shape=(max_tokens,))
@@ -109,9 +117,12 @@ if __name__ == "__main__":
     loglevel = getattr(logging, args.log.upper())
     logging.basicConfig(stream=sys.stdout, level=loglevel)
 
+    base_job_dir = args.job_dir
+    version_job_dir = os.path.join(base_job_dir, __version__, f"batch={args.batch_size}", f"epochs={args.epochs}")
+
     train_and_evaluate(data_location=args.data_location,
                        epochs=args.epochs,
                        batch_size=args.batch_size,
-                       job_dir=args.job_dir,
+                       job_dir=version_job_dir,
                        max_tokens=args.max_tokens,
                        hidden_dim=args.hidden_dim)
