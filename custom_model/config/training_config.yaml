@@ -10,5 +10,5 @@ workerPoolSpecs:
       - --data-location=/gcs/ihr-vertex-pipelines/data/aclImdb/
       - --epochs=15
       - --batch-size=128
-      - --job-dir=gs://ihr-vertex-pipelines/job_dir/
+      - --job-dir=/gcs/ihr-vertex-pipelines/job_dir/
       - --parallel-reads

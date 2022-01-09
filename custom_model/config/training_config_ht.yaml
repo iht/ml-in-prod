@@ -28,5 +28,5 @@ trialJobSpec:
       pythonModule: trainer.task
       args:
         - --data-location=/gcs/ihr-vertex-pipelines/data/aclImdb/
-        - --job-dir=gs://ihr-vertex-pipelines/job_dir_ht/
+        - --job-dir=/gcs/ihr-vertex-pipelines/job_dir_ht/
         - --parallel-reads
