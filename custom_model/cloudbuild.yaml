@@ -3,10 +3,10 @@ steps:
   - name: gcr.io/cloud-builders/git
     args: [ 'fetch', '--unshallow' ]
   # Install dependencies
-  - name: python
-    entrypoint: pip
-    dir: 'custom_model'
-    args: [ "install", "-r", "requirements.txt", "--user" ]
+#  - name: python
+#    entrypoint: pip
+#    dir: 'custom_model'
+#    args: [ "install", "-r", "requirements.txt", "--user" ]
   # Build package
   - name: python
     entrypoint: python
