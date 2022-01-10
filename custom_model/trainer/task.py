@@ -145,7 +145,11 @@ def train_and_evaluate(data_location: str,
 
     model.summary(print_fn=logging.info)
 
-    model.fit(train_ds.cache(), epochs=epochs, validation_data=validation_ds.cache())
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR'],
+        histogram_freq=1)
+
+    model.fit(train_ds.cache(), epochs=epochs, validation_data=validation_ds.cache(), callbacks=[tensorboard_callback])
 
     # Evaluate metrics and write to log
     loss, acc = model.evaluate(test_ds)
