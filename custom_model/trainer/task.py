@@ -145,8 +145,10 @@ def train_and_evaluate(data_location: str,
 
     model.summary(print_fn=logging.info)
 
+    logs_dir = os.environ.get('AIP_TENSORBOARD_LOG_DIR', os.path.join(job_dir, "logs"))
+    logging.info(f"Writing TB logs to {logs_dir}")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
-        log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR'],
+        log_dir=logs_dir,
         histogram_freq=1)
 
     model.fit(train_ds.cache(), epochs=epochs, validation_data=validation_ds.cache(), callbacks=[tensorboard_callback])
