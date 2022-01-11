@@ -110,6 +110,9 @@ def _read_using_parallel_reads(data_location: str,
     return train_ds, validation_ds, test_ds
 
 
+def _read_tfrecords():
+    pass
+
 def train_and_evaluate(data_location: str,
                        batch_size: int,
                        epochs: int,

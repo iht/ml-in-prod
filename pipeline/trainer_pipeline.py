@@ -16,7 +16,9 @@ import os
 
 from typing import Dict
 
+
 from tfx.orchestration.pipeline import Pipeline
+from tfx.v1.extensions import google_cloud_ai_platform
 
 SERVICE_ACCOUNT = 'ml-in-prod-sa@ihr-vertex-pipelines.iam.gserviceaccount.com'
 TENSORBOARD = ' projects/237148598933/locations/europe-west4/tensorboards/8364662251654742016'
@@ -60,4 +62,5 @@ def create_vertex_pipeline(pipeline_name: str,
                            project_id: str,
                            region: str,
                            ) -> Pipeline:
-    pass
+
+    trainer = google_cloud_ai_platform.Trainer()
