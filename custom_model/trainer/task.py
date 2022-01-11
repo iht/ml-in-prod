@@ -176,9 +176,12 @@ def train_and_evaluate(data_location: str,
     model.save(model_path)
 
     # Write text vectorizer (to avoid training-inference skew)
-    vectorizer_path = os.path.join(job_dir, "text_vectorizer_weights.npy")
+    vectorizer_path = os.path.join(job_dir, "text_vectorizer_fn")
     logging.info(f"Writing text vectorizer to {vectorizer_path}")
-    np.save(vectorizer_path, vectorizer.get_weights())
+    vectorizer_model = models.Sequential()
+    vectorizer_model.add(layers.Input(shape=(1,), dtype=tf.string))
+    vectorizer_model.add(vectorizer)
+    vectorizer_model.save(vectorizer_path)
 
 
 def _build_model(max_tokens, hidden_dim) -> Model:
