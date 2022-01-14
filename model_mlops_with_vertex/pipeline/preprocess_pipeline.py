@@ -57,13 +57,13 @@ def run_pipeline(argv, data_location: str, output_location: str):
         output_location_train = os.path.join(output_location, 'train_data/train')
         train_tf_examples = transformed_train | "TrainToExamples" >> beam.FlatMapTuple(
             lambda batch, _: RecordBatchToExamples(batch))
-        train_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_train,
+        train_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_train, num_shards=1,
                                                                           file_name_suffix='.tfrecord')
 
         output_location_test = os.path.join(output_location, 'test_data/test')
         test_tf_examples = transformed_test | "TestToExamples" >> beam.FlatMapTuple(
             lambda batch, _: RecordBatchToExamples(batch))
-        test_tf_examples | "Write test data" >> beam.io.WriteToTFRecord(output_location_test,
+        test_tf_examples | "Write test data" >> beam.io.WriteToTFRecord(output_location_test, num_shards=1,
                                                                         file_name_suffix='.tfrecord')
 
         transform_fn_loc = os.path.join(output_location, 'transform_fn/')
