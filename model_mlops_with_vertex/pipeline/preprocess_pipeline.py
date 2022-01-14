@@ -18,7 +18,7 @@ import tempfile
 import apache_beam as beam
 import tensorflow_transform.beam as tft_beam
 
-from tfx_bsl.cc.tfx_bsl_extension.coders import RecordBatchToExamples
+from tfx_bsl.coders.example_coder import RecordBatchToExamples
 
 from preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
 
