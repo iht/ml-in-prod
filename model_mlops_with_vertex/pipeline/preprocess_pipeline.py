@@ -14,18 +14,12 @@
 import argparse
 import os
 import tempfile
-from typing import Dict
 
 import apache_beam as beam
-import tensorflow as tf
 import tensorflow_transform.beam as tft_beam
-from apache_beam import PCollection, Pipeline
-from tensorflow_transform.tf_metadata import dataset_metadata, schema_utils
 
 # Just an identity for the moment
 from tfx_bsl.cc.tfx_bsl_extension.coders import RecordBatchToExamples
-
-import model_mlops_with_vertex.preprocess.ReadSetTransform
 
 from model_mlops_with_vertex.preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
 
@@ -41,19 +35,23 @@ def run_pipeline(argv, data_location: str, output_location: str):
             raw_data_train = p | "Read train set" >> ReadSetTransform(data_location=data_location,
                                                                       data_set=TypeOfDataSet.TRAIN)
 
-            transformed_dataset, transform_fn = (raw_data_train, ReadSetTransform.metadata) | "Analyz. and Transf." >> \
-                                                tft_beam.AnalyzeAndTransformDataset(
-                                                    preprocessing_fn,
-                                                    output_record_batches=True)
+            transf_train_ds, transform_fn = (raw_data_train, ReadSetTransform.metadata) | "Analyz. and Transf." >> \
+                                            tft_beam.AnalyzeAndTransformDataset(
+                                                preprocessing_fn,
+                                                output_record_batches=True)
 
-            transformed_train, _ = transformed_dataset
+            transformed_train, _ = transf_train_ds  # Ignore metadata
 
             raw_data_test = p | "Read test set" >> ReadSetTransform(data_location=data_location,
                                                                     data_set=TypeOfDataSet.TEST)
 
+            raw_dataset_test = (raw_data_test, ReadSetTransform.metadata)
+
             # Apply the same transform from train set to test set
-            transformed_test = (raw_data_test, transform_fn) | "Transform test" >> tft_beam.TransformDataset(
+            transf_test_ds = (raw_dataset_test, transform_fn) | "Transform test" >> tft_beam.TransformDataset(
                 output_record_batches=True)
+
+            transformed_test, _ = transf_test_ds  # Ignore metadata
 
             output_location_train = os.path.join(output_location, 'train_data/train')
             train_tf_examples = transformed_train | "TrainToExamples" >> beam.FlatMapTuple(
@@ -64,8 +62,8 @@ def run_pipeline(argv, data_location: str, output_location: str):
             output_location_test = os.path.join(output_location, 'test_data/test')
             test_tf_examples = transformed_test | "TestToExamples" >> beam.FlatMapTuple(
                 lambda batch, _: RecordBatchToExamples(batch))
-            test_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_test,
-                                                                             file_name_suffix='.tfrecord')
+            test_tf_examples | "Write test data" >> beam.io.WriteToTFRecord(output_location_test,
+                                                                            file_name_suffix='.tfrecord')
 
             transform_fn_loc = os.path.join(output_location, 'transform_fn/')
             transform_fn | "Write transform fn" >> tft_beam.WriteTransformFn(transform_fn_loc)
