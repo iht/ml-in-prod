@@ -5,15 +5,15 @@ steps:
   # Install dependencies
 #  - name: python
 #    entrypoint: pip
-#    dir: 'custom_model'
+#    dir: 'model_mlops_with_vertex'
 #    args: [ "install", "-r", "requirements.txt", "--user" ]
   # Build package
   - name: python
     entrypoint: python
-    dir: 'custom_model'
+    dir: 'model_mlops_with_vertex'
     args: [ "setup.py", "sdist" ]
 # Upload built package
 artifacts:
   objects:
     location: 'gs://ihr-vertex-pipelines/dist/'
-    paths: [ 'custom_model/dist/*.tar.gz' ]
+    paths: [ 'model_mlops_with_vertex/dist/*.tar.gz' ]

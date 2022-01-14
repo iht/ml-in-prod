@@ -19,11 +19,15 @@ from typing import Dict
 import apache_beam as beam
 import tensorflow as tf
 import tensorflow_transform.beam as tft_beam
-from apache_beam import PCollection
+from apache_beam import PCollection, Pipeline
 from tensorflow_transform.tf_metadata import dataset_metadata, schema_utils
 
 # Just an identity for the moment
 from tfx_bsl.cc.tfx_bsl_extension.coders import RecordBatchToExamples
+
+import model_mlops_with_vertex.preprocess.ReadSetTransform
+
+from model_mlops_with_vertex.preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
 
 
 def preprocessing_fn(inputs):
@@ -32,36 +36,36 @@ def preprocessing_fn(inputs):
 
 
 def run_pipeline(argv, data_location: str, output_location: str):
-    metadata = dataset_metadata.DatasetMetadata(
-        schema_utils.schema_from_feature_spec({
-            'label': tf.io.FixedLenFeature([], tf.int64),
-            'text': tf.io.FixedLenFeature([], tf.string),
-        }))
-
-    train_location = os.path.join(data_location, "train")
-    train_pos_location = os.path.join(train_location, "pos/*.txt")
-    train_neg_location = os.path.join(train_location, "neg/*.txt")
-
     with beam.Pipeline(argv=argv) as p:
         with tft_beam.Context(temp_dir=tempfile.mktemp()):
-            pos_txt: PCollection[str] = p | "Read train data pos" >> beam.io.ReadFromText(train_pos_location)
-            neg_txt: PCollection[str] = p | "Read train data neg" >> beam.io.ReadFromText(train_neg_location)
-            pos_dicts: PCollection[Dict] = pos_txt | "Pos2Example" >> beam.Map(lambda t: {'label': 1, 'text': t})
-            neg_dicts: PCollection[Dict] = neg_txt | "Neg2Example" >> beam.Map(lambda t: {'label': 1, 'text': t})
-            raw_data: PCollection[Dict] = (pos_dicts, neg_dicts) | beam.Flatten()
+            raw_data_train = p | "Read train set" >> ReadSetTransform(data_location=data_location,
+                                                                      data_set=TypeOfDataSet.TRAIN)
 
-            transformed_dataset, transform_fn = (raw_data,
-                                                 metadata) | "Analyz. and Transf." >> \
+            transformed_dataset, transform_fn = (raw_data_train, ReadSetTransform.metadata) | "Analyz. and Transf." >> \
                                                 tft_beam.AnalyzeAndTransformDataset(
                                                     preprocessing_fn,
                                                     output_record_batches=True)
 
-            transformed_data, _ = transformed_dataset
-            output_location_train = os.path.join(output_location, 'train')
-            tf_examples = transformed_data | "ToExamples" >> beam.FlatMapTuple(
+            transformed_train, _ = transformed_dataset
+
+            raw_data_test = p | "Read test set" >> ReadSetTransform(data_location=data_location,
+                                                                    data_set=TypeOfDataSet.TEST)
+
+            # Apply the same transform from train set to test set
+            transformed_test = (raw_data_test, transform_fn) | "Transform test" >> tft_beam.TransformDataset(
+                output_record_batches=True)
+
+            output_location_train = os.path.join(output_location, 'train_data/train')
+            train_tf_examples = transformed_train | "TrainToExamples" >> beam.FlatMapTuple(
                 lambda batch, _: RecordBatchToExamples(batch))
-            tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_train,
-                                                                        file_name_suffix='.tfrecord')
+            train_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_train,
+                                                                              file_name_suffix='.tfrecord')
+
+            output_location_test = os.path.join(output_location, 'test_data/test')
+            test_tf_examples = transformed_test | "TestToExamples" >> beam.FlatMapTuple(
+                lambda batch, _: RecordBatchToExamples(batch))
+            test_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_test,
+                                                                             file_name_suffix='.tfrecord')
 
             transform_fn_loc = os.path.join(output_location, 'transform_fn/')
             transform_fn | "Write transform fn" >> tft_beam.WriteTransformFn(transform_fn_loc)
