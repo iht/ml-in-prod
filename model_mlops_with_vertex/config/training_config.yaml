@@ -1,4 +1,4 @@
-serviceAccount: ml-in-prod-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
+serviceAccount: ml-in-prod-vertex-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
 tensorboard: projects/237148598933/locations/europe-west4/tensorboards/3505278253721976832
 baseOutputDirectory:
   outputUriPrefix: gs://ihr-vertex-pipelines/0.9+4.g25d04f2/batch=8192/epochs=15/
