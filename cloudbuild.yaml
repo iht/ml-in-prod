@@ -2,11 +2,6 @@ steps:
   # Grab full history
   - name: gcr.io/cloud-builders/git
     args: [ 'fetch', '--unshallow' ]
-  # Install dependencies
-#  - name: python
-#    entrypoint: pip
-#    dir: 'model_mlops_with_vertex'
-#    args: [ "install", "-r", "requirements.txt", "--user" ]
   # Build package
   - name: python
     entrypoint: python
