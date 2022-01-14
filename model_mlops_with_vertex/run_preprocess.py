@@ -11,4 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
+
+import argparse
+
+from pipeline.preprocess_pipeline import run_pipeline
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--data-location', default=None, required=True)
+parser.add_argument('--output-location', default=None, required=True)
+
+known_args, others = parser.parse_known_args()
+
+run_pipeline(others, known_args.data_location, known_args.output_location)

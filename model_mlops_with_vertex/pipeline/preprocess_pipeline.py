@@ -66,13 +66,3 @@ def run_pipeline(argv, data_location: str, output_location: str):
 
             transform_fn_loc = os.path.join(output_location, 'transform_fn/')
             transform_fn | "Write transform fn" >> tft_beam.WriteTransformFn(transform_fn_loc)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--data-location', default=None, required=True)
-    parser.add_argument('--output-location', default=None, required=True)
-
-    known_args, others = parser.parse_known_args()
-    run_pipeline(others, known_args.data_location, known_args.output_location)

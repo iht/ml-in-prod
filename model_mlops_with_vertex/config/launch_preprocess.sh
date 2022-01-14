@@ -9,7 +9,15 @@ SUBNETWORK=regions/$REGION/subnetworks/default
 
 CONTAINER=$REGION-docker.pkg.dev/$PROJECT/dataflow-containers/ml-in-prod-container
 
-python -m pipeline.preprocess_pipeline \
+VERSION=`python setup.py --version`
+
+python setup.py sdist
+
+EXTRA_PACKAGE=dist/my_first_ml_model-$VERSION.tar.gz
+
+pip install "$EXTRA_PACKAGE"
+
+python run_preprocess.py \
   --runner=DataflowRunner \
   --region=$REGION \
   --project=$PROJECT \
@@ -19,6 +27,6 @@ python -m pipeline.preprocess_pipeline \
   --service_account_email=$SERVICE_ACCOUNT \
   --experiments=use_runner_v2 \
   --sdk_container_image=$CONTAINER \
-  --setup_file=./setup.py \
+  --extra_package=$EXTRA_PACKAGE \
   --data-location=$INPUT_DATA \
   --output-location=$OUTPUT_DATA
