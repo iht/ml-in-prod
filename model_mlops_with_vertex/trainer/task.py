@@ -21,7 +21,6 @@ import random
 import sys
 from typing import Tuple
 
-import numpy as np
 import tensorflow as tf
 from keras import Model, activations, models, losses, metrics
 from keras import layers

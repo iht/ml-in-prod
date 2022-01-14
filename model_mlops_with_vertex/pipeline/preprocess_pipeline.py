@@ -18,10 +18,9 @@ import tempfile
 import apache_beam as beam
 import tensorflow_transform.beam as tft_beam
 
-# Just an identity for the moment
 from tfx_bsl.cc.tfx_bsl_extension.coders import RecordBatchToExamples
 
-from model_mlops_with_vertex.preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
+from preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
 
 
 def preprocessing_fn(inputs):

@@ -5,14 +5,15 @@ REGION=europe-west4
 PROJECT=ihr-vertex-pipelines
 SERVICE_ACCOUNT=ml-in-prod-dataflow-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
 TEMP_LOCATION=gs://ihr-vertex-pipelines/tmp/
-NETWORK=default
+SUBNETWORK=regions/$REGION/subnetworks/default
 
 python -m pipeline.preprocess_pipeline \
   --runner=DataflowRunner \
   --region=$REGION \
   --project=$PROJECT \
   --temp_location=$TEMP_LOCATION \
-  --network=$NETWORK \
+  --no_use_public_ips \
+  --subnetwork=$SUBNETWORK \
   --service_account_email=$SERVICE_ACCOUNT \
   --setup_file=./setup.py \
   --data-location=$INPUT_DATA \
