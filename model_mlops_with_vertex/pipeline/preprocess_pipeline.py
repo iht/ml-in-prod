@@ -20,7 +20,7 @@ import tensorflow_transform.beam as tft_beam
 
 from tfx_bsl.coders.example_coder import RecordBatchToExamples
 
-from preprocess.ReadSetTransform import ReadSetTransform, TypeOfDataSet
+from .read_set import ReadSetTransform, TypeOfDataSet
 
 
 def preprocessing_fn(inputs):
