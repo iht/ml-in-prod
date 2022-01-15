@@ -21,6 +21,7 @@ import random
 import sys
 from typing import Tuple
 
+import hypertune
 import tensorflow as tf
 from keras import Model, activations, models, losses, metrics
 from keras import layers
@@ -164,10 +165,16 @@ def train_and_evaluate(data_location: str,
     metric_tag = "kschool_accuracy"
     eval_path = os.path.join(job_dir, metric_tag)
     logging.info(f"Writing accuracy to {eval_path}")
-    writer = tf.summary.create_file_writer(eval_path)
-    with writer.as_default():
-        tf.summary.scalar(name=metric_tag, step=epochs, data=acc)
-    writer.flush()
+    hpt = hypertune.HyperTune()
+    hpt.report_hyperparameter_tuning_metric(
+        hyperparameter_metric_tag=metric_tag,
+        metric_value=acc,
+        global_step=epochs)
+
+    # writer = tf.summary.create_file_writer(eval_path)
+    # with writer.as_default():
+    #     tf.summary.scalar(name=metric_tag, step=epochs, data=acc)
+    # writer.flush()
 
     # Write model artifact
     model_path = os.path.join(job_dir, "saved_model")
