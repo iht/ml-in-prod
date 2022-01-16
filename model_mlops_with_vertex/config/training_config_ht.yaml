@@ -15,8 +15,6 @@ studySpec:
           - 512
           - 1024
           - 2048
-maxTrialCount: 100
-parallelTrialCount: 10
 trialJobSpec:
   serviceAccount: ml-in-prod-vertex-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
   tensorboard: projects/237148598933/locations/europe-west4/tensorboards/3505278253721976832
