@@ -40,13 +40,13 @@ NUM_PARALLEL_CALLS = 4  # for performance when transforming text data (assuming 
 
 def _read_tfrecords(data_location: str,
                     batch_size: int) -> Tuple[tf.data.Dataset, tf.data.Dataset]:  # , tf.data.Dataset]:
-    train_location = os.path.join(data_location, "train/*.tfrecord")
-    test_location = os.path.join(data_location, "test/*.tfrecord")
+    train_location = os.path.join(data_location, "train/train_data-00000-of-00001.tfrecord")
+    test_location = os.path.join(data_location, "test/test_data-00000-of-00001.tfrecord")
 
     logging.info(f"Reading training data from {train_location}")
-    all_train_ds: tf.data.Dataset = tf.data.TFRecordDataset(glob.glob(train_location))
+    all_train_ds: tf.data.Dataset = tf.data.TFRecordDataset([train_location])
     logging.info(f"Reading test data from {test_location}")
-    test_ds: tf.data.Dataset = tf.data.TFRecordDataset(glob.glob(train_location))
+    test_ds: tf.data.Dataset = tf.data.TFRecordDataset([test_location])
 
     all_train_ds = all_train_ds.batch(batch_size)
     all_train_ds= all_train_ds.map(lambda r: tf.io.parse_example(r, SCHEMA))
@@ -91,7 +91,7 @@ def train_and_evaluate(data_location: str,
         log_dir=logs_dir,
         histogram_freq=1)
 
-    model.fit(train_ds.cache(), epochs=epochs, validation_split=validation_split, callbacks=[tensorboard_callback])
+    model.fit(train_ds.cache(), epochs=epochs, callbacks=[tensorboard_callback])
 
     # Evaluate metrics and write to log
     loss, acc = model.evaluate(test_ds)
