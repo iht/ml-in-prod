@@ -49,24 +49,37 @@ def _read_tfrecords(data_location: str,
     test_ds: tf.data.Dataset = tf.data.TFRecordDataset([test_location])
 
     all_train_ds = all_train_ds.batch(batch_size)
-    all_train_ds= all_train_ds.map(lambda r: tf.io.parse_example(r, SCHEMA))
+    all_train_ds = all_train_ds.map(lambda r: tf.io.parse_example(r, SCHEMA))
     test_ds = test_ds.batch(batch_size)
     test_ds = test_ds.map(lambda r: tf.io.parse_example(r, SCHEMA))
 
     return all_train_ds, test_ds
 
 
+def get_save_paths(job_dir: Optional[str]):
+    if job_dir:
+        logging.info("Running in local")
+        logs_dir = os.path.join(job_dir, "logs")
+        models_dir = os.path.join(job_dir, "models")
+    else:
+        logging.info("Running in Vertex")
+        logs_dir = os.environ.get('AIP_TENSORBOARD_LOG_DIR')
+        models_dir = os.environ.get('AIP_MODEL_DIR')
+
+    logging.info(f"Tensorboard logs will be written to {logs_dir}")
+    logging.info(f"Models written will be to {models_dir}")
+
+    return logs_dir, models_dir
+
+
 def train_and_evaluate(data_location: str,
                        batch_size: int,
                        epochs: int,
-                       validation_split: float,
                        max_tokens: int,
                        hidden_dim: int,
                        num_parallel_calls: int,
                        job_dir: Optional[str]):
-    # train_ds, validation_ds, test_ds = _read_tfrecords(data_location=data_location,
-    #                                                    batch_size=batch_size,
-    #                                                    validation_split=validation_split)
+    logs_dir, models_dir = get_save_paths(job_dir)
 
     train_ds, test_ds = _read_tfrecords(data_location=data_location,
                                         batch_size=batch_size)
@@ -76,8 +89,6 @@ def train_and_evaluate(data_location: str,
     train_ds: tf.data.Dataset = train_ds.map(lambda r: (vectorizer(r['text']), r['target']),
                                              num_parallel_calls=num_parallel_calls)
 
-    # validation_ds: tf.data.Dataset = validation_ds.map(lambda x, y: (vectorizer(x), y),
-    #                                                    num_parallel_calls=num_parallel_calls)
     test_ds: tf.data.Dataset = test_ds.map(lambda r: (vectorizer(r['text']), r['target']),
                                            num_parallel_calls=num_parallel_calls)
 
@@ -85,7 +96,6 @@ def train_and_evaluate(data_location: str,
 
     model.summary(print_fn=logging.info)
 
-    logs_dir = os.environ.get('AIP_TENSORBOARD_LOG_DIR', os.path.join(job_dir, "logs"))
     logging.info(f"Writing TB logs to {logs_dir}")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=logs_dir,
@@ -108,12 +118,12 @@ def train_and_evaluate(data_location: str,
         global_step=epochs)
 
     # Write model artifact
-    model_path = os.environ.get('AIP_MODEL_DIR', os.path.join(job_dir, "saved_model"))
+    model_path = os.path.join(models_dir, "saved_model")
     logging.info(f"Writing model to {model_path}")
     model.save(model_path)
 
     # Write text vectorizer (to avoid training-inference skew)
-    vectorizer_path = os.environ.get('AIP_MODEL_DIR', os.path.join(job_dir, "vectorizer_fn"))
+    vectorizer_path = os.path.join(models_dir, "vectorizer_fn")
     logging.info(f"Writing text vectorizer to {vectorizer_path}")
     vectorizer_model = models.Sequential()
     vectorizer_model.add(layers.Input(shape=(1,), dtype=tf.string))
@@ -140,7 +150,6 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, required=True)
     parser.add_argument('--max-tokens', default=MAX_TOKENS, type=int)
     parser.add_argument('--hidden-dim', default=HIDDEN_DIM, type=int)
-    parser.add_argument('--validation-split', default=VALIDATION_SPLIT, type=float)
     parser.add_argument('--num-parallel-calls', default=NUM_PARALLEL_CALLS, type=int)
     parser.add_argument('--log', default='INFO', required=False)
     parser.add_argument('--job-dir', default=None, required=False)
@@ -155,6 +164,5 @@ if __name__ == "__main__":
                        batch_size=args.batch_size,
                        max_tokens=args.max_tokens,
                        hidden_dim=args.hidden_dim,
-                       validation_split=args.validation_split,
                        num_parallel_calls=args.num_parallel_calls,
                        job_dir=args.job_dir)
