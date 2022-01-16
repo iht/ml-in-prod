@@ -150,9 +150,6 @@ if __name__ == "__main__":
     loglevel = getattr(logging, args.log.upper())
     logging.basicConfig(stream=sys.stdout, level=loglevel)
 
-    base_job_dir = args.job_dir
-    version_job_dir = os.path.join(base_job_dir, __version__, f"batch={args.batch_size}", f"epochs={args.epochs}")
-
     train_and_evaluate(data_location=args.data_location,
                        epochs=args.epochs,
                        batch_size=args.batch_size,
@@ -160,4 +157,4 @@ if __name__ == "__main__":
                        hidden_dim=args.hidden_dim,
                        validation_split=args.validation_split,
                        num_parallel_calls=args.num_parallel_calls,
-                       job_dir=version_job_dir)
+                       job_dir=args.job_dir)
