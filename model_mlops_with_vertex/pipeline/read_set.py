@@ -18,8 +18,9 @@ import os.path
 from typing import Dict
 
 import apache_beam as beam
-import tensorflow as tf
 from tensorflow_transform.tf_metadata import dataset_metadata, schema_utils
+
+from schemas.imdb_instance import SCHEMA
 
 
 class TypeOfDataSet(enum.Enum):
@@ -30,10 +31,7 @@ class TypeOfDataSet(enum.Enum):
 
 class ReadSetTransform(beam.PTransform):
     metadata = dataset_metadata.DatasetMetadata(
-        schema_utils.schema_from_feature_spec({
-            'label': tf.io.FixedLenFeature([], tf.int64),
-            'text': tf.io.FixedLenFeature([], tf.string),
-        }))
+        schema_utils.schema_from_feature_spec(SCHEMA))
 
     def __init__(self, data_location: str, data_set: TypeOfDataSet):
         self._data_location: str = data_location
@@ -58,8 +56,8 @@ class ReadSetTransform(beam.PTransform):
         pos_txt: beam.PCollection[str] = p | "Read pos txt" >> beam.io.ReadFromText(self._pos_location)
         neg_txt: beam.PCollection[str] = p | "Read neg txt" >> beam.io.ReadFromText(self._neg_location)
 
-        pos_dicts: beam.PCollection[Dict] = pos_txt | "txt2dict pos" >> beam.Map(lambda t: {'label': 1, 'text': t})
-        neg_dicts: beam.PCollection[Dict] = neg_txt | "txt2dict neg" >> beam.Map(lambda t: {'label': 0, 'text': t})
+        pos_dicts: beam.PCollection[Dict] = pos_txt | "txt2dict pos" >> beam.Map(lambda t: {'target': 1, 'text': t})
+        neg_dicts: beam.PCollection[Dict] = neg_txt | "txt2dict neg" >> beam.Map(lambda t: {'target': 0, 'text': t})
 
         all_dicts: beam.PCollection[Dict] = (pos_dicts, neg_dicts) | "Fuse pos and neg" >> beam.Flatten()
 

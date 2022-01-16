@@ -16,6 +16,8 @@ import os
 
 import apache_beam as beam
 import tensorflow_transform.beam as tft_beam
+import tensorflow as tf
+from apache_beam import PCollection
 from apache_beam.options.pipeline_options import PipelineOptions, GoogleCloudOptions
 
 from tfx_bsl.coders.example_coder import RecordBatchToExamples
@@ -37,11 +39,10 @@ def run_pipeline(argv, data_location: str, output_location: str):
                                                                   data_set=TypeOfDataSet.TRAIN)
 
         transf_train_ds, transform_fn = (raw_data_train, ReadSetTransform.metadata) | "Analyz. and Transf." >> \
-                                        tft_beam.AnalyzeAndTransformDataset(
-                                            preprocessing_fn,
-                                            output_record_batches=True)
+                                        tft_beam.AnalyzeAndTransformDataset(preprocessing_fn,
+                                                                            output_record_batches=True)
 
-        transformed_train, _ = transf_train_ds  # Ignore metadata
+        transformed_train, _ = transf_train_ds  # Ignore metadata (not required for RecordBatch)
 
         raw_data_test = p | "Read test set" >> ReadSetTransform(data_location=data_location,
                                                                 data_set=TypeOfDataSet.TEST)
@@ -54,13 +55,15 @@ def run_pipeline(argv, data_location: str, output_location: str):
 
         transformed_test, _ = transf_test_ds  # Ignore metadata
 
-        output_location_train = os.path.join(output_location, 'train_data/train')
-        train_tf_examples = transformed_train | "TrainToExamples" >> beam.FlatMapTuple(
+        output_location_train = os.path.join(output_location, 'train/train_data')
+        train_tf_examples: PCollection[tf.train.Example] = transformed_train | "TrainToExamples" >> beam.FlatMapTuple(
             lambda batch, _: RecordBatchToExamples(batch))
-        train_tf_examples | "Write train data" >> beam.io.WriteToTFRecord(output_location_train, num_shards=1,
-                                                                          file_name_suffix='.tfrecord')
 
-        output_location_test = os.path.join(output_location, 'test_data/test')
+        train_tf_examples | "Write train data" >> beam.io.tfrecordio.WriteToTFRecord(output_location_train,
+                                                                                     num_shards=1,
+                                                                                     file_name_suffix='.tfrecord')
+
+        output_location_test = os.path.join(output_location, 'test/test_data')
         test_tf_examples = transformed_test | "TestToExamples" >> beam.FlatMapTuple(
             lambda batch, _: RecordBatchToExamples(batch))
         test_tf_examples | "Write test data" >> beam.io.WriteToTFRecord(output_location_test, num_shards=1,

@@ -14,11 +14,15 @@
 
 import os
 
-from typing import Dict
+from typing import Dict, List
 
+import tensorflow as tf
 
+from tensorflow_metadata.proto.v0 import schema_pb2
 from tfx.orchestration.pipeline import Pipeline
+from tfx import v1 as tfx
 from tfx.v1.extensions import google_cloud_ai_platform
+from tfx_bsl.public import tfxio
 
 SERVICE_ACCOUNT = 'ml-in-prod-sa@ihr-vertex-pipelines.iam.gserviceaccount.com'
 TENSORBOARD = ' projects/237148598933/locations/europe-west4/tensorboards/8364662251654742016'
@@ -53,6 +57,18 @@ def _get_training_config(service_account: str,
     return vertex_job_spec
 
 
+def _input_fn(file_pattern: List[str],
+              data_accessor: tfx.components.DataAccessor,
+              schema: schema_pb2.Schema,
+              batch_size: int,
+              label_key: str) -> tf.data.Dataset:
+    ds = data_accessor.tf_dataset_factory(file_pattern,
+                                          tfxio.TensorFlowDatasetOptions(batch_size=batch_size, label_key=label_key),
+                                          schema=schema)
+
+    return ds.repeat()
+
+
 def create_vertex_pipeline(pipeline_name: str,
                            input_dir: str,
                            pipeline_root: str,
@@ -62,5 +78,4 @@ def create_vertex_pipeline(pipeline_name: str,
                            project_id: str,
                            region: str,
                            ) -> Pipeline:
-
     trainer = google_cloud_ai_platform.Trainer()
