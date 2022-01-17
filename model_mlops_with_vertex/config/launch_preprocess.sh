@@ -33,6 +33,6 @@ python run_preprocess.py \
   --extra_package=$EXTRA_PACKAGE \
   --worker_machine_type=$WORKER_TYPE \
   --autoscaling_algorithm=NONE \
-  --num_workers=5 \
+  --num_workers=$NUM_WORKERS \
   --data-location=$INPUT_DATA \
   --output-location=$OUTPUT_DATA
