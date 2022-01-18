@@ -14,7 +14,10 @@
 
 import tensorflow as tf
 
+LABEL_COLUMN = 'target'
+TEXT_COLUMN = 'text'
+
 SCHEMA = {
-    'target': tf.io.FixedLenFeature([], tf.int64),
-    'text': tf.io.FixedLenFeature([], tf.string),
+    LABEL_COLUMN: tf.io.FixedLenFeature([], tf.int64),
+    TEXT_COLUMN: tf.io.FixedLenFeature([], tf.string),
 }
