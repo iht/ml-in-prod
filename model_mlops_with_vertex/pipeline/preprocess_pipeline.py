@@ -15,6 +15,7 @@
 import os
 
 import apache_beam as beam
+import tensorflow_transform as tft
 import tensorflow_transform.beam as tft_beam
 import tensorflow as tf
 from apache_beam import PCollection
@@ -23,11 +24,21 @@ from apache_beam.options.pipeline_options import PipelineOptions, GoogleCloudOpt
 from tfx_bsl.coders.example_coder import RecordBatchToExamples
 
 from .read_set import ReadSetTransform, TypeOfDataSet
+from schemas.imdb_instance import TEXT_COLUMN, LABEL_COLUMN
+
+MAX_TOKENS = 20000
 
 
 def preprocessing_fn(inputs):
-    outputs = inputs.copy()
-    return outputs
+    text = inputs[TEXT_COLUMN]
+    review_tokens = tf.strings.split(text, sep=" ").to_sparse()
+    ngrams = tft.ngrams(review_tokens, ngram_range=(1, 2), separator=" ")
+    vocab_indices = tft.compute_and_apply_vocabulary(ngrams, top_k=MAX_TOKENS)
+    indices, weights = tft.tfidf(vocab_indices, MAX_TOKENS)
+
+    labels = inputs[LABEL_COLUMN]
+
+    return {'index': indices, 'weight': weights, LABEL_COLUMN: labels}
 
 
 def run_pipeline(argv, data_location: str, output_location: str):

@@ -1,5 +1,5 @@
 INPUT_DATA=gs://ihr-vertex-pipelines/data/aclImdb/
-OUTPUT_DATA=gs://ihr-vertex-pipelines/data/prepared/
+OUTPUT_DATA=gs://ihr-vertex-pipelines/data/tf_idf_prepared/
 
 NUM_WORKERS=5
 WORKER_TYPE=n2-standard-8

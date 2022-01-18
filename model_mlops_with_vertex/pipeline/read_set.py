@@ -20,7 +20,7 @@ from typing import Dict
 import apache_beam as beam
 from tensorflow_transform.tf_metadata import dataset_metadata, schema_utils
 
-from schemas.imdb_instance import SCHEMA
+from schemas.imdb_instance import TEXT_COLUMN, LABEL_COLUMN, SCHEMA
 
 
 class TypeOfDataSet(enum.Enum):
@@ -56,8 +56,10 @@ class ReadSetTransform(beam.PTransform):
         pos_txt: beam.PCollection[str] = p | "Read pos txt" >> beam.io.ReadFromText(self._pos_location)
         neg_txt: beam.PCollection[str] = p | "Read neg txt" >> beam.io.ReadFromText(self._neg_location)
 
-        pos_dicts: beam.PCollection[Dict] = pos_txt | "txt2dict pos" >> beam.Map(lambda t: {'target': 1, 'text': t})
-        neg_dicts: beam.PCollection[Dict] = neg_txt | "txt2dict neg" >> beam.Map(lambda t: {'target': 0, 'text': t})
+        pos_dicts: beam.PCollection[Dict] = pos_txt | "txt2dict pos" >> beam.Map(
+            lambda t: {LABEL_COLUMN: 1, TEXT_COLUMN: t})
+        neg_dicts: beam.PCollection[Dict] = neg_txt | "txt2dict neg" >> beam.Map(
+            lambda t: {LABEL_COLUMN: 0, TEXT_COLUMN: t})
 
         all_dicts: beam.PCollection[Dict] = (pos_dicts, neg_dicts) | "Fuse pos and neg" >> beam.Flatten()
 
