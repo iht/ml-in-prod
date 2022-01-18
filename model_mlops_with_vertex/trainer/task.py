@@ -14,7 +14,6 @@
 #
 
 import argparse
-import glob
 import logging
 import os
 import sys
@@ -84,7 +83,8 @@ def train_and_evaluate(data_location: str,
     train_ds, test_ds = _read_tfrecords(data_location=data_location,
                                         batch_size=batch_size)
 
-    vectorizer: TextVectorization = TextVectorization(ngrams=2, max_tokens=MAX_TOKENS, output_mode="multi_hot")
+    vectorizer: TextVectorization = TextVectorization(ngrams=2, max_tokens=MAX_TOKENS, output_mode="tf_idf")
+    # Build vocabulary
     vectorizer.adapt(train_ds.map(lambda r: r['text']))
     train_ds: tf.data.Dataset = train_ds.map(lambda r: (vectorizer(r['text']), r['target']),
                                              num_parallel_calls=num_parallel_calls)
@@ -122,7 +122,7 @@ def train_and_evaluate(data_location: str,
     logging.info(f"Writing model to {model_path}")
     model.save(model_path)
 
-    # Write text vectorizer (to avoid training-inference skew)
+    # Write text vectorizer (to avoid training-inference drift)
     vectorizer_path = os.path.join(models_dir, "vectorizer_fn")
     logging.info(f"Writing text vectorizer to {vectorizer_path}")
     vectorizer_model = models.Sequential()
