@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# exit when any command fails
+set -e
+
 INPUT_DATA=gs://ihr-vertex-pipelines/data/aclImdb/
 OUTPUT_DATA=gs://ihr-vertex-pipelines/data/tf_idf_prepared/
 
@@ -12,15 +17,15 @@ SUBNETWORK=regions/$REGION/subnetworks/default
 
 CONTAINER=$REGION-docker.pkg.dev/$PROJECT/dataflow-containers/ml-in-prod-container
 
-VERSION=`python setup.py --version`
+VERSION=`python3 setup.py --version`
 
-python setup.py sdist
+python3 setup.py sdist
 
 EXTRA_PACKAGE=dist/my_first_ml_model-$VERSION.tar.gz
 
-pip install "$EXTRA_PACKAGE"
+pip3 install "$EXTRA_PACKAGE"
 
-python run_preprocess.py \
+python3 run_preprocess.py \
   --runner=DataflowRunner \
   --region=$REGION \
   --project=$PROJECT \
