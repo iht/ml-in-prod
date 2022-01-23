@@ -34,14 +34,14 @@ def create_training_pipeline(project: str,
     aiplatform.init(project=project, location=region, staging_bucket=staging_bucket)
 
     worker_pool_specs = [{
-        "machineSpec": {
-            "machineType": machine_type
+        "machine_spec": {
+            "machine_type": machine_type
         }},
-        {"replicaCount": 1},
-        {"pythonPackageSpec": {
-            "executorImageUri": container_uri,
-            "packageUris": python_package_gcs_uri,
-            "pythonModule": python_module_name,
+        {"replica_count": 1},
+        {"python_package_spec": {
+            "executor_image_uri": container_uri,
+            "package_uris": python_package_gcs_uri,
+            "python_module": python_module_name,
             "args": module_args
         }}]
 

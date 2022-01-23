@@ -38,9 +38,11 @@ python3 setup.py sdist
 
 LOCAL_PACKAGE=dist/my_first_ml_model-$VERSION.tar.gz
 
+gsutil cp $LOCAL_PACKAGE gs://ihr-vertex-pipelines/dist/
+
 pip3 install "$LOCAL_PACKAGE"
 
-JOB_NAME=training-pipeline-$VERSION
+JOB_NAME=ht-training-pipeline-$VERSION
 
 echo Running job $JOB_NAME
 
