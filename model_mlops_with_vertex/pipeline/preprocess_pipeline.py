@@ -24,8 +24,6 @@ from tfx_bsl.coders.example_coder import RecordBatchToExamples
 
 from .read_set import ReadSetTransform, TypeOfDataSet
 
-MAX_TOKENS = 20000
-
 
 def preprocessing_just_text_fn(inputs):
     return inputs.copy()
