@@ -13,18 +13,14 @@
 #  limitations under the License.
 #
 
-import argparse
 import logging
 import os
-import sys
 from typing import Optional, List
-from urllib.parse import urlparse
 
 import hypertune
 import tensorflow as tf
 import tensorflow_transform as tft
-from google.cloud import storage
-from google.cloud.storage import Blob
+import tfx.v1 as tfx
 from keras import Model, activations, models, losses, metrics
 from keras import layers
 from keras.layers import TextVectorization
@@ -35,16 +31,19 @@ from tensorflow_transform import TFTransformOutput
 
 MAX_TOKENS = 20000
 HIDDEN_DIM = 16
+VALIDATION_SPLIT = 0.2
+
+DATASET_SIZE = 25000
+
+NUM_PARALLEL_CALLS = 4  # for performance when transforming text data (assuming 4 vCPUs in worker)
 
 
-def _training_input_fn(file_pattern: str,
+def _training_input_fn(file_pattern: List[str],
                        tf_transform_output: tft.TFTransformOutput,
                        batch_size: int) -> tf.data.Dataset:
     transformed_feature_spec = tf_transform_output.transformed_feature_spec()
 
-    filenames = _get_load_paths(file_pattern)
-
-    dataset = tf.data.TFRecordDataset(filenames)
+    dataset = tf.data.TFRecordDataset(file_pattern)
     dataset = dataset.map(lambda r: tf.io.parse_single_example(r, transformed_feature_spec))
     dataset = dataset.map(lambda d: (d[TEXT_COLUMN], d[LABEL_COLUMN]))
     dataset = dataset.batch(batch_size)
@@ -55,29 +54,18 @@ def _training_input_fn(file_pattern: str,
 def _read_tfrecords(data_location: str,
                     tft_location: str,
                     batch_size: int) -> (tf.data.Dataset, tf.data.Dataset):
-    train_location = os.path.join(data_location, "train/")
-    test_location = os.path.join(data_location, "test/")
+    train_location = os.path.join(data_location, "train/train_data-00000-of-00001.tfrecord")
+    test_location = os.path.join(data_location, "test/test_data-00000-of-00001.tfrecord")
 
     tf_transform_output: TFTransformOutput = tft.TFTransformOutput(tft_location)
 
-    train_ds = _training_input_fn(train_location, tf_transform_output, batch_size=batch_size)
-    test_ds = _training_input_fn(test_location, tf_transform_output, batch_size=batch_size)
+    train_ds = _training_input_fn([train_location], tf_transform_output, batch_size=batch_size)
+    test_ds = _training_input_fn([test_location], tf_transform_output, batch_size=batch_size)
 
     return train_ds, test_ds
 
 
-def _get_load_paths(file_pattern: str) -> List[str]:
-    storage_client = storage.Client()
-    url_parts = urlparse(file_pattern)
-    bucket = url_parts.hostname
-    location = url_parts.path
-    output: List[Blob] = storage_client.list_blobs(bucket, prefix=location[1:])
-    paths = [f"gs://{b.bucket.name}/{b.name}" for b in output]
-
-    return paths
-
-
-def _get_save_paths(job_dir: Optional[str]) -> (str, str):
+def get_save_paths(job_dir: Optional[str]) -> (str, str):
     if job_dir:
         logging.info("Running in local")
         logs_dir = os.path.join(job_dir, "logs")
@@ -93,14 +81,8 @@ def _get_save_paths(job_dir: Optional[str]) -> (str, str):
     return logs_dir, models_dir
 
 
-def train_and_evaluate(data_location: str,
-                       tft_location: str,
-                       batch_size: int,
-                       epochs: int,
-                       max_tokens: int,
-                       hidden_dim: int,
-                       job_dir: Optional[str]):
-    logs_dir, models_dir = _get_save_paths(job_dir)
+def run_fn(fn_args: tfx.components.FnArgs):
+    logs_dir, models_dir = get_save_paths(job_dir)
 
     train_ds, test_ds = _read_tfrecords(data_location=data_location,
                                         tft_location=tft_location,
@@ -110,8 +92,8 @@ def train_and_evaluate(data_location: str,
 
     vectorizer: TextVectorization = layers.TextVectorization(ngrams=2, max_tokens=max_tokens, output_mode="multi_hot")
     vectorizer.adapt(x_text_train)
-    train_ds = train_ds.map(lambda x, y: (vectorizer(x), y))
-    test_ds = test_ds.map(lambda x, y: (vectorizer(x), y))
+    train_ds = train_ds.map(lambda x, y: (vectorizer(x), y), num_parallel_calls=4)
+    test_ds = test_ds.map(lambda x, y: (vectorizer(x), y), num_parallel_calls=4)
 
     model = _build_model(max_tokens, hidden_dim)
 
@@ -123,7 +105,7 @@ def train_and_evaluate(data_location: str,
         log_dir=logs_dir,
         histogram_freq=1)
 
-    model.fit(train_ds, epochs=epochs, callbacks=[tensorboard_callback], validation_data=test_ds)
+    model.fit(train_ds, epochs=epochs, callbacks=[tensorboard_callback])
 
     # Evaluate metrics and write to log
     loss, acc = model.evaluate(test_ds)
@@ -151,9 +133,6 @@ def train_and_evaluate(data_location: str,
 
 
 def _build_model(max_tokens: int, hidden_dim: int) -> Model:
-    # TextVectorization cannot be used as layer at the same time as Tensorboard
-    # https://github.com/keras-team/keras/issues/15163
-
     inputs: Layer = layers.Input(shape=(max_tokens,))
     x: Layer = layers.Dense(hidden_dim, activation=activations.relu)(inputs)
     x: Layer = layers.Dropout(0.5)(x)
@@ -162,29 +141,3 @@ def _build_model(max_tokens: int, hidden_dim: int) -> Model:
     model.compile(optimizer=RMSProp(), loss=losses.binary_crossentropy, metrics=[metrics.binary_accuracy])
 
     return model
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--data-location', default=None, required=True)
-    parser.add_argument('--tft-location', default=None, required=True)
-    parser.add_argument('--epochs', type=int, required=True)
-    parser.add_argument('--batch-size', type=int, required=True)
-    parser.add_argument('--max-tokens', default=MAX_TOKENS, type=int)
-    parser.add_argument('--hidden-dim', default=HIDDEN_DIM, type=int)
-    parser.add_argument('--log', default='INFO', required=False)
-    parser.add_argument('--job-dir', default=None, required=False)
-
-    args = parser.parse_args()
-
-    loglevel = getattr(logging, args.log.upper())
-    logging.basicConfig(stream=sys.stdout, level=loglevel)
-
-    train_and_evaluate(data_location=args.data_location,
-                       tft_location=args.tft_location,
-                       epochs=args.epochs,
-                       batch_size=args.batch_size,
-                       max_tokens=args.max_tokens,
-                       hidden_dim=args.hidden_dim,
-                       job_dir=args.job_dir)

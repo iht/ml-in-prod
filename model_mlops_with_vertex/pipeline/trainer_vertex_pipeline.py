@@ -14,15 +14,12 @@
 
 import os
 
-from typing import Dict, List
+from typing import Dict
 
-import tensorflow as tf
-
-from tensorflow_metadata.proto.v0 import schema_pb2
-from tfx.orchestration.pipeline import Pipeline
 from tfx import v1 as tfx
-from tfx.v1.extensions import google_cloud_ai_platform
-from tfx_bsl.public import tfxio
+
+from google.cloud import aiplatform
+from google.cloud.aiplatform import pipeline_jobs
 
 SERVICE_ACCOUNT = 'ml-in-prod-sa@ihr-vertex-pipelines.iam.gserviceaccount.com'
 TENSORBOARD = ' projects/237148598933/locations/europe-west4/tensorboards/8364662251654742016'
@@ -57,25 +54,120 @@ def _get_training_config(service_account: str,
     return vertex_job_spec
 
 
-def _input_fn(file_pattern: List[str],
-              data_accessor: tfx.components.DataAccessor,
-              schema: schema_pb2.Schema,
-              batch_size: int,
-              label_key: str) -> tf.data.Dataset:
-    ds = data_accessor.tf_dataset_factory(file_pattern,
-                                          tfxio.TensorFlowDatasetOptions(batch_size=batch_size, label_key=label_key),
-                                          schema=schema)
+def _create_pipeline(pipeline_name: str,
+                     pipeline_root: str,
+                     data_root: str,
+                     module_file: str,
+                     endpoint_name: str,
+                     project_id: str,
+                     region: str,
+                     service_account: str,
+                     tensorboard: str,
+                     output_directory_prefix: str,
+                     model_version: str,
+                     epochs: int,
+                     batch_size: int) -> tfx.dsl.Pipeline:
+    # Brings data into the pipeline or otherwise joins/converts training data.
+    input_config = tfx.proto.Input(splits=[
+        tfx.proto.example_gen_pb2.Input.Split(name='train', pattern='train/*'),
+        tfx.proto.example_gen_pb2.Input.Split(name='eval', pattern='eval/*')
+    ])
+    example_gen = tfx.components.ImportExampleGen(input_base=data_root, input_config=input_config)
 
-    return ds.repeat()
+    vertex_job_spec = _get_training_config(service_account,
+                                           tensorboard,
+                                           output_directory_prefix,
+                                           model_version,
+                                           epochs,
+                                           batch_size)
+
+    # Trains a model using Vertex AI Training.
+    # NEW: We need to specify a Trainer for GCP with related configs.
+    trainer = tfx.extensions.google_cloud_ai_platform.Trainer(
+        module_file=module_file,
+        examples=example_gen.outputs['examples'],
+        train_args=tfx.proto.TrainArgs(num_steps=100),
+        eval_args=tfx.proto.EvalArgs(num_steps=5),
+        custom_config={
+            tfx.extensions.google_cloud_ai_platform.ENABLE_UCAIP_KEY:
+                True,
+            tfx.extensions.google_cloud_ai_platform.UCAIP_REGION_KEY:
+                region,
+            tfx.extensions.google_cloud_ai_platform.TRAINING_ARGS_KEY:
+                vertex_job_spec,
+        })
+
+    # Configuration for pusher.
+    vertex_serving_spec = {
+        'project_id': project_id,
+        'endpoint_name': endpoint_name,
+        # Remaining argument is passed to aiplatform.Model.deploy()
+        # See https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api#deploy_the_model
+        # for the detail.
+        #
+        # Machine type is the compute resource to serve prediction requests.
+        # See https://cloud.google.com/vertex-ai/docs/predictions/configure-compute#machine-types
+        # for available machine types and acccerators.
+        'machine_type': 'n1-standard-4',
+    }
+
+    # Vertex AI provides pre-built containers with various configurations for
+    # serving.
+    # See https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
+    # for available container images.
+    serving_image = 'us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-6:latest'
+
+    # NEW: Pushes the model to Vertex AI.
+    pusher = tfx.extensions.google_cloud_ai_platform.Pusher(
+        model=trainer.outputs['model'],
+        custom_config={
+            tfx.extensions.google_cloud_ai_platform.ENABLE_VERTEX_KEY:
+                True,
+            tfx.extensions.google_cloud_ai_platform.VERTEX_REGION_KEY:
+                region,
+            tfx.extensions.google_cloud_ai_platform.VERTEX_CONTAINER_IMAGE_URI_KEY:
+                serving_image,
+            tfx.extensions.google_cloud_ai_platform.SERVING_ARGS_KEY:
+                vertex_serving_spec,
+        })
+
+    components = [
+        example_gen,
+        trainer,
+        pusher,
+    ]
+
+    return tfx.dsl.Pipeline(
+        pipeline_name=pipeline_name,
+        pipeline_root=pipeline_root,
+        components=components)
 
 
-def create_vertex_pipeline(pipeline_name: str,
-                           input_dir: str,
-                           pipeline_root: str,
-                           data_root: str,
-                           module_file: str,
-                           serving_model: str,
-                           project_id: str,
-                           region: str,
-                           ) -> Pipeline:
-    trainer = google_cloud_ai_platform.Trainer()
+if __name__ == '__main__':
+    PIPELINE_NAME = "test"
+    PIPELINE_DEFINITION_FILE = PIPELINE_NAME + '_pipeline.json'
+
+    runner = tfx.orchestration.experimental.KubeflowV2DagRunner(
+        config=tfx.orchestration.experimental.KubeflowV2DagRunnerConfig(),
+        output_filename=PIPELINE_DEFINITION_FILE)
+    _ = runner.run(
+        _create_pipeline(
+            pipeline_name=PIPELINE_NAME,
+            pipeline_root="",
+            data_root="",
+            module_file="",
+            endpoint_name="",
+            project_id="",
+            region="",
+            service_account="",
+            tensorboard="",
+            output_directory_prefix="",
+            model_version="",
+            epochs=0,
+            batch_size=0))
+
+    aiplatform.init(project="", location="")
+
+    job = pipeline_jobs.PipelineJob(template_path=PIPELINE_DEFINITION_FILE,
+                                    display_name=PIPELINE_NAME)
+    job.run(sync=False)
