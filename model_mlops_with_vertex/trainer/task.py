@@ -96,7 +96,7 @@ def train_and_evaluate(data_location: str,
 
     model.summary(print_fn=logging.info)
 
-    logging.info(f"Writing TB logs to {logs_dir}")
+    logging.info(f"Writing TensorBoard logs to {logs_dir}")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=logs_dir,
         histogram_freq=1)
