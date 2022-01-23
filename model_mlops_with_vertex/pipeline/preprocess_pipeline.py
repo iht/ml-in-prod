@@ -29,16 +29,8 @@ from schemas.imdb_instance import TEXT_COLUMN, LABEL_COLUMN
 MAX_TOKENS = 20000
 
 
-def preprocessing_fn(inputs):
-    text = inputs[TEXT_COLUMN]
-    review_tokens = tf.strings.split(text, sep=" ").to_sparse()
-    ngrams = tft.ngrams(review_tokens, ngram_range=(1, 2), separator=" ")
-    vocab_indices = tft.compute_and_apply_vocabulary(ngrams, top_k=MAX_TOKENS)
-    indices, weights = tft.tfidf(vocab_indices, MAX_TOKENS)
-
-    labels = inputs[LABEL_COLUMN]
-
-    return {'index': indices, 'weight': weights, LABEL_COLUMN: labels}
+def preprocessing_just_text_fn(inputs):
+    return inputs.copy()
 
 
 def run_pipeline(argv, data_location: str, output_location: str):
@@ -50,7 +42,7 @@ def run_pipeline(argv, data_location: str, output_location: str):
                                                                   data_set=TypeOfDataSet.TRAIN)
 
         transf_train_ds, transform_fn = (raw_data_train, ReadSetTransform.metadata) | "Analyz. and Transf." >> \
-                                        tft_beam.AnalyzeAndTransformDataset(preprocessing_fn,
+                                        tft_beam.AnalyzeAndTransformDataset(preprocessing_just_text_fn,
                                                                             output_record_batches=True)
 
         transformed_train, _ = transf_train_ds  # Ignore metadata (not required for RecordBatch)
