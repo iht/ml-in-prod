@@ -24,8 +24,12 @@ LOCAL_PACKAGE=dist/my_first_ml_model-$VERSION.tar.gz
 
 pip3 install "$LOCAL_PACKAGE"
 
+JOB_NAME=training-pipeline-$VERSION
+
+echo Running job $JOB_NAME
+
 python -m pipeline.custom_trainer_pipeline \
-  --job-name training-pipeline-$VERSION \
+  --job-name $JOB_NAME \
   --project $PROJECT \
   --region $REGION \
   --package-gcs-location $PKG_GCS_LOCATION \
