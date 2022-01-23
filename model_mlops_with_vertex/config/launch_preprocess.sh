@@ -4,7 +4,7 @@
 set -e
 
 INPUT_DATA=gs://ihr-vertex-pipelines/data/aclImdb/
-OUTPUT_DATA=gs://ihr-vertex-pipelines/data/tf_idf_prepared/
+OUTPUT_DATA=gs://ihr-vertex-pipelines/data/tf_record_with_text/
 
 NUM_WORKERS=5
 WORKER_TYPE=n2-standard-8

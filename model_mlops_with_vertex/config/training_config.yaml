@@ -11,6 +11,7 @@ workerPoolSpecs:
     packageUris: gs://ihr-vertex-pipelines/dist/my_first_ml_model-0.11+2.gbe36177.tar.gz
     pythonModule: trainer.task
     args:
-      - --data-location=gs://ihr-vertex-pipelines/data/prepared/
+      - --data-location=gs://ihr-vertex-pipelines/data/tf_record_with_text/
+      - --tft-location=gs://ihr-vertex-pipelines/data/tf_record_with_text/transform_fn
       - --epochs=15
       - --batch-size=8192
