@@ -102,8 +102,10 @@ def train_and_evaluate(data_location: str,
 
     vectorizer: TextVectorization = layers.TextVectorization(ngrams=2, max_tokens=max_tokens, output_mode="multi_hot")
     vectorizer.adapt(x_text_train, steps=epochs)
+    train_ds = train_ds.map(lambda x, y: (vectorizer(x), y))
+    test_ds = test_ds.map(lambda x, y: (vectorizer(x), y))
 
-    model = _build_model(hidden_dim, vectorizer)
+    model = _build_model(max_tokens, hidden_dim)
 
     # Show model summary in log for debugging purposes
     model.summary(print_fn=logging.info)
@@ -113,7 +115,7 @@ def train_and_evaluate(data_location: str,
         log_dir=logs_dir,
         histogram_freq=1)
 
-    model.fit(train_ds, epochs=epochs, callbacks=[tensorboard_callback], steps_per_epoch=dataset_size//epochs)
+    model.fit(train_ds, epochs=epochs, callbacks=[tensorboard_callback], steps_per_epoch=dataset_size // epochs)
 
     # Evaluate metrics and write to log
     loss, acc = model.evaluate(test_ds)
@@ -130,15 +132,22 @@ def train_and_evaluate(data_location: str,
         global_step=epochs)
 
     # Write model artifact
-    model_path = os.path.join(models_dir)
+    model_path = os.path.join(models_dir, "saved_model")
     logging.info(f"Writing model to {model_path}")
     model.save(model_path)
 
+    # Write vectorizer
+    vectorizer_path = os.path.join(models_dir, "vectorizer")
+    logging.info(f"Writing vectorizer to {vectorizer_path}")
+    model.save(vectorizer_path)
 
-def _build_model(hidden_dim, text_vectorizer: TextVectorization) -> Model:
-    inputs: Layer = layers.Input(shape=(1,), dtype=tf.string)
-    x: Layer = text_vectorizer(inputs)
-    x: Layer = layers.Dense(hidden_dim, activation=activations.relu)(x)
+
+def _build_model(max_tokens: int, hidden_dim: int) -> Model:
+    # TextVectorization cannot be used as layer at the same time as Tensorboard
+    # https://github.com/keras-team/keras/issues/15163
+
+    inputs: Layer = layers.Input(shape=(max_tokens,))
+    x: Layer = layers.Dense(hidden_dim, activation=activations.relu)(inputs)
     x: Layer = layers.Dropout(0.5)(x)
     outputs: Layer = layers.Dense(1, activation=activations.sigmoid)(x)
     model: Model = models.Model(inputs, outputs, name="my-kschool-model")

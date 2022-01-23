@@ -1,14 +1,14 @@
 serviceAccount: ml-in-prod-vertex-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
 tensorboard: projects/237148598933/locations/europe-west4/tensorboards/3505278253721976832
 baseOutputDirectory:
-  outputUriPrefix: gs://ihr-vertex-pipelines/0.11+2.gbe36177/batch=8192/epochs=15/
+  outputUriPrefix: gs://ihr-vertex-pipelines/0.13/batch=8192/epochs=15/
 workerPoolSpecs:
   machineSpec:
     machineType: n1-standard-4
   replicaCount: 1
   pythonPackageSpec:
     executorImageUri: europe-docker.pkg.dev/vertex-ai/training/tf-cpu.2-7:latest
-    packageUris: gs://ihr-vertex-pipelines/dist/my_first_ml_model-0.11+2.gbe36177.tar.gz
+    packageUris: gs://ihr-vertex-pipelines/dist/my_first_ml_model-0.13.tar.gz
     pythonModule: trainer.task
     args:
       - --data-location=gs://ihr-vertex-pipelines/data/tf_record_with_text/
