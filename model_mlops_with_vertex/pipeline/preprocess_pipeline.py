@@ -15,7 +15,6 @@
 import os
 
 import apache_beam as beam
-import tensorflow_transform as tft
 import tensorflow_transform.beam as tft_beam
 import tensorflow as tf
 from apache_beam import PCollection
@@ -24,7 +23,6 @@ from apache_beam.options.pipeline_options import PipelineOptions, GoogleCloudOpt
 from tfx_bsl.coders.example_coder import RecordBatchToExamples
 
 from .read_set import ReadSetTransform, TypeOfDataSet
-from schemas.imdb_instance import TEXT_COLUMN, LABEL_COLUMN
 
 MAX_TOKENS = 20000
 
