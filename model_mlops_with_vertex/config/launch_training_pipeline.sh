@@ -1,5 +1,6 @@
 PROJECT=ihr-vertex-pipelines
 REGION=europe-west4
+STAGING_BUCKET=gs://ihr-vertex-pipelines/tmp/
 MACHINE_TYPE=n1-standard-4
 SERVICE_ACCOUNT=ml-in-prod-vertex-sa@ihr-vertex-pipelines.iam.gserviceaccount.com
 TENSORBOAD=projects/237148598933/locations/europe-west4/tensorboards/3505278253721976832
@@ -32,6 +33,7 @@ python -m pipeline.custom_training_pipeline \
   --job-name $JOB_NAME \
   --project $PROJECT \
   --region $REGION \
+  --staging-bucket $STAGING_BUCKET \
   --package-gcs-location $PKG_GCS_LOCATION \
   --python-module-name $PYTHON_MODULE_NAME \
   --base-output-dir $BASE_OUTPUT_DIR \

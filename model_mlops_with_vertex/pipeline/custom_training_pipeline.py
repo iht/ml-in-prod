@@ -21,6 +21,7 @@ from google.cloud import aiplatform
 def create_training_pipeline(project: str,
                              region: str,
                              job_name: str,
+                             staging_bucket: str,
                              python_package_gcs_uri: str,
                              python_module_name: str,
                              module_args: List[str],
@@ -29,7 +30,7 @@ def create_training_pipeline(project: str,
                              tensorboard: str,
                              base_output_dir: str,
                              machine_type: str):
-    aiplatform.init(project=project, location=region)
+    aiplatform.init(project=project, location=region, staging_bucket=staging_bucket)
 
     job = aiplatform.CustomPythonPackageTrainingJob(display_name=job_name,
                                                     python_package_gcs_uri=python_package_gcs_uri,
@@ -50,6 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('--job-name', required=True)
     parser.add_argument('--project', required=True)
     parser.add_argument('--region', required=True)
+    parser.add_argument('--staging-bucket', required=True)
     parser.add_argument('--package-gcs-location', required=True)
     parser.add_argument('--python-module-name', required=True)
     parser.add_argument('--base-output-dir', required=True)
@@ -72,6 +74,7 @@ if __name__ == '__main__':
     create_training_pipeline(job_name=args.job_name,
                              project=args.project,
                              region=args.region,
+                             staging_bucket=args.staging_bucket,
                              python_package_gcs_uri=args.package_gcs_location,
                              python_module_name=args.python_module_name,
                              module_args=module_args,
