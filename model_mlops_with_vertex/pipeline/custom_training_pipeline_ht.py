@@ -36,14 +36,15 @@ def create_training_pipeline(project: str,
     worker_pool_specs = [{
         "machine_spec": {
             "machine_type": machine_type
-        }},
-        {"replica_count": 1},
-        {"python_package_spec": {
+        },
+        "replica_count": 1,
+        "python_package_spec": {
             "executor_image_uri": container_uri,
             "package_uris": python_package_gcs_uri,
             "python_module": python_module_name,
             "args": module_args
-        }}]
+        },
+    }]
 
     python_job = aiplatform.CustomJob(
         display_name=job_name,
@@ -62,11 +63,11 @@ def create_training_pipeline(project: str,
                 values=[128, 256, 512, 1024, 2048],
                 scale='linear')
         },
-        max_trial_count=128,
+        max_trial_count=56,
         parallel_trial_count=8,
     )
 
-    ht_job.run(service_account=service_account, tensorboard=tensorboard)
+    ht_job.run(service_account=service_account)
 
 
 if __name__ == '__main__':
