@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from urllib.parse import urlparse
 
 import hypertune
@@ -54,7 +54,7 @@ def _training_input_fn(file_pattern: str,
 
 def _read_tfrecords(data_location: str,
                     tft_location: str,
-                    batch_size: int) -> (tf.data.Dataset, tf.data.Dataset):
+                    batch_size: int) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
     train_location = os.path.join(data_location, "train/")
     test_location = os.path.join(data_location, "test/")
 
@@ -77,7 +77,7 @@ def _get_load_paths(file_pattern: str) -> List[str]:
     return paths
 
 
-def _get_save_paths(job_dir: Optional[str]) -> (str, str):
+def _get_save_paths(job_dir: Optional[str]) -> Tuple[str, str]:
     if job_dir:
         logging.info("Running in local")
         logs_dir = os.path.join(job_dir, "logs")
@@ -106,10 +106,11 @@ def train_and_evaluate(data_location: str,
                                         tft_location=tft_location,
                                         batch_size=batch_size)
 
-    x_text_train = train_ds.map(lambda x, y: x)
+    x_text_train = train_ds.map(lambda text, label: text)
 
     vectorizer: TextVectorization = layers.TextVectorization(ngrams=2, max_tokens=max_tokens, output_mode="multi_hot")
     vectorizer.adapt(x_text_train)
+
     train_ds = train_ds.map(lambda x, y: (vectorizer(x), y))
     test_ds = test_ds.map(lambda x, y: (vectorizer(x), y))
 
@@ -144,10 +145,13 @@ def train_and_evaluate(data_location: str,
     logging.info(f"Writing model to {model_path}")
     model.save(model_path)
 
-    # Write vectorizer
+    # Write vectorizer. Wrap it in a model for easy I/O
     vectorizer_path = os.path.join(models_dir, "vectorizer")
     logging.info(f"Writing vectorizer to {vectorizer_path}")
-    model.save(vectorizer_path)
+    vect_model = tf.keras.models.Sequential()
+    vect_model.add(tf.keras.Input(shape=(1,), dtype=tf.string))
+    vect_model.add(vectorizer)
+    vect_model.save(vectorizer_path)
 
 
 def _build_model(max_tokens: int, hidden_dim: int) -> Model:
