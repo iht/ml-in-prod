@@ -5,10 +5,6 @@ from setuptools import find_packages, setup
 
 readme = os.path.join(os.path.dirname(__file__), 'README.md')
 
-with open(os.path.join(os.path.dirname(__file__),
-                       'requirements.txt')) as requirements:
-    install_requires = requirements.readlines()
-
 setup(name='my_first_ml_model',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
@@ -27,9 +23,6 @@ setup(name='my_first_ml_model',
       url='Some URL',
       license='All rights reserved',
       packages=find_packages(exclude=['tests']),
-      install_requires=install_requires,
-      setup_requires=['pytest-runner'],
-      tests_require=['pytest'],
       include_package_data=True,
       zip_safe=False
       )

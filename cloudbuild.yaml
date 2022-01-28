@@ -1,0 +1,14 @@
+steps:
+  # Grab full history
+  - name: gcr.io/cloud-builders/git
+    args: [ 'fetch', '--unshallow' ]
+  # Build package
+  - name: python
+    entrypoint: python
+    dir: '.'
+    args: [ "setup.py", "sdist" ]
+# Upload built package
+artifacts:
+  objects:
+    location: 'gs://SOMEWHERE/dist/'
+    paths: [ './dist/*.tar.gz' ]

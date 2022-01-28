@@ -1,0 +1,14 @@
+serviceAccount: SOME_SERVICE_ACCOUNT
+tensorboard: SOME_TENSORBOARD
+baseOutputDirectory:
+  outputUriPrefix: gs://SOMEWHERE
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-standard-4
+  replicaCount: 1
+  pythonPackageSpec:
+    executorImageUri: europe-docker.pkg.dev/vertex-ai/training/tf-cpu.2-7:latest
+    packageUris: gs://SOMEWHERE
+    pythonModule: trainer.task
+    args:
+      - --some-arg=123
