@@ -46,7 +46,7 @@ JOB_NAME=ht-training-pipeline-$VERSION
 
 echo Running job $JOB_NAME
 
-python -m pipeline.custom_training_pipeline_ht \
+python3 -m pipeline.custom_training_pipeline_ht \
   --job-name $JOB_NAME \
   --project $PROJECT \
   --region $REGION \
