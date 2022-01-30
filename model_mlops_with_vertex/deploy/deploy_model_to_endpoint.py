@@ -4,6 +4,7 @@
 #   - Deploy model to endpoint
 
 
+import os
 from typing import Dict, Optional, Sequence, Tuple
 
 from google.cloud import aiplatform
@@ -16,11 +17,11 @@ from keras import layers
 from keras.layers import TextVectorization
 from keras.models import load_model
 
-project_id='ihr-vertex-pipelines'
-my_region='europe-west4' # :flag-nl:
-model_name='model_text_jan27'
-endpoint_name='raw_model_endpoint'
-model_location='gs://ihr-vertex-pipelines/0.13+14.gb9a60f7/batch=8192/epochs=15/model'
+project_id = os.environ.get('PROJECT_ID')
+my_region = os.environ.get('MY_REGION')
+model_name = os.environ.get('MODEL_NAME')
+endpoint_name = os.environ.get('ENDPOINT_NAME')
+model_location = os.environ.get('MODEL_LOCATION')
 
 
 def upload_model(
