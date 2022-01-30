@@ -1,6 +1,0 @@
-# .coveragerc
-[report]
-show_missing = False
-omit =
-    trainer/_version.py
-    */site-packages/*

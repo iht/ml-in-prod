@@ -2,7 +2,6 @@
 *.iml
 *~
 .cache/
-.idea/
 tests.xml
 .scannerwork/
 src/__pycache__
