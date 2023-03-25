@@ -1,5 +1,5 @@
 apache-beam[gcp]==2.35.0
-tensorflow==2.7.0
+tensorflow==2.11.1
 google-cloud-aiplatform==1.10.0
 cloudml-hypertune
 tfx[kfp]==1.6.1
